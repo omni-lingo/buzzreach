@@ -63,3 +63,60 @@
 
 ## tests
 - [ ] TEST-001 End-to-end integration (anti-silo)
+
+## frontend
+- [ ] FE-001 Settings & Configuration UI
+- [ ] FE-002 Opportunities Dashboard (live feed)
+
+## onboarding
+- [ ] ONBOARD-001 Signup / Registration Flow
+- [ ] ONBOARD-002 Email Verification Service
+- [ ] ONBOARD-003 First-Run Setup Wizard
+- [ ] ONBOARD-004 Password Reset / Account Recovery
+
+## billing
+- [ ] BILL-001 Stripe Payment Integration
+- [ ] BILL-002 Subscription Plans & Management
+- [ ] BILL-003 Usage Metering & Quotas
+- [ ] BILL-004 Customer Portal
+
+## admin
+- [ ] ADMIN-001 Team Management (members, roles, invites)
+- [ ] ADMIN-002 Workspace Management
+
+## features
+- [ ] FEAT-001 Draft Editor & Customization
+- [ ] FEAT-002 Advanced Filtering System
+- [ ] FEAT-003 Post-Action Tracking & Conversion Analytics
+- [ ] FEAT-004 Search Profiles & Scheduling
+- [ ] FEAT-005 Tone Detection
+- [ ] FEAT-006 Bulk Actions (dismiss, regenerate)
+
+## mobile
+- [ ] MOBILE-001 Mobile App (React Native) Base Setup
+- [ ] MOBILE-002 Push Notifications (iOS/Android)
+- [ ] MOBILE-003 Mobile Opportunity Feed
+- [ ] MOBILE-004 One-Click Copy & URL Launcher
+
+## extensions
+- [ ] EXT-001 Browser Extension (Chrome/Firefox/Edge)
+- [ ] EXT-002 Slack Bot Integration
+- [ ] EXT-003 Webhook Delivery Handler
+
+## parsers
+- [ ] PARSE-001 Reddit-Specific Parser
+- [ ] PARSE-002 Quora-Specific Parser
+- [ ] PARSE-003 Blog/Forum Comment Parser
+
+## site
+- [ ] SITE-001 Landing Page & Marketing Website
+- [ ] SITE-002 Documentation Site
+
+## quality
+- [ ] QUALITY-001 Dark Mode Theme
+- [ ] QUALITY-002 Keyboard Shortcuts
+- [ ] QUALITY-003 Draft Templates Library
+- [ ] QUALITY-004 Niche Bundles (pre-configured)
+
+## desktop
+- [ ] DESKTOP-001 Electron Desktop App

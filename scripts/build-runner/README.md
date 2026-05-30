@@ -5,12 +5,15 @@ Automated build system for the 30-atom MVP. Orchestrates Claude Code sessions to
 ## Quick Start (Windows)
 
 ```bash
+# Setup (run once first time)
+cd d:\BuzzReach
+scripts\build-runner\setup-windows.bat
+
 # Full build in background (Opus 4.6, max effort)
 build.bat
 
 # Check progress
-tail -f logs/build-runner.log    # Linux/macOS
-Get-Content logs/build-runner.log -Wait  # PowerShell
+Get-Content logs\build-runner.log -Wait  # PowerShell
 
 # Or foreground (for debugging)
 build-foreground.bat
@@ -20,7 +23,8 @@ build-foreground.bat
 
 ### Full Build
 ```bash
-build.bat                          # All 30 atoms, Opus 4.6
+build.bat                          # All 30 atoms, Opus 4.6 (background)
+build-foreground.bat               # All 30 atoms (foreground, shows output)
 ```
 
 ### Partial Builds
@@ -32,22 +36,28 @@ build.bat --max-atoms 5            # First 5 atoms, then stop
 
 ### Status & Planning
 ```bash
-build.bat --status                 # Show progress
+build.bat --status                 # Show progress (0/30 complete, etc)
 build.bat --dry-run                # Show wave plan (parallelizable atoms)
-build.bat --health                 # Infrastructure checks
+build.bat --health                 # Infrastructure checks (DB, cache, storage)
+build.bat --exports                # Show available functions/classes from completed atoms
 ```
 
-### Advanced
+### Advanced Options
 ```bash
-build-foreground.bat --timeout 3600           # 1h per atom
+build-foreground.bat --timeout 3600           # 1h per atom (default 30min)
 build-foreground.bat --budget 100             # Stop if cost > $100
+build-foreground.bat --model claude-sonnet-4-6  # Use Sonnet instead of Opus
+build-foreground.bat --parallel 2             # Build 2 atoms in parallel
 ```
 
 ## What It Does
 
-1. **Load Config**: Reads `product.yaml` (tech stack, modules, build config)
-2. **Discover Atoms**: Scans `atoms/**/*.md` for atom specs
-3. **Topological Sort**: Orders atoms by dependencies
+1. **Check Dependencies**: Verifies Python 3.11+, Claude CLI, PyYAML installed
+2. **Create Directories**: Sets up state/, logs/, data/ if missing
+3. **Health Checks**: Tests DB, cache, storage, disk space, git status
+4. **Load Config**: Reads `product.yaml` (tech stack, modules, build config)
+5. **Discover Atoms**: Scans `atoms/**/*.md` for atom specs
+6. **Topological Sort**: Orders atoms by dependencies
 4. **State Management**: Tracks progress in `state/build_state.json`
 5. **Atomic Claims**: Prevents parallel conflicts via SQLite
 6. **Invoke Claude**: For each atom, runs `claude --print` with the atom spec
