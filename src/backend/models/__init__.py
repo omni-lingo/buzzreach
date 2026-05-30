@@ -7,9 +7,11 @@ from src.backend.models.stripe_customer import StripeCustomer
 from src.backend.models.team import Team
 from src.backend.models.team_invitation import TeamInvitation
 from src.backend.models.team_member import TeamMember
+from src.backend.models.usage import DailyUsage
 from src.backend.models.user import User
 
 __all__ = [
+    "DailyUsage",
     "Metric",
     "Opportunity",
     "SeenUrl",
