@@ -1,4 +1,9 @@
-"""Alembic environment configuration for BuzzReach migrations."""
+"""Alembic environment configuration for BuzzReach migrations.
+
+Imports ``Base.metadata`` so autogenerate picks up all registered models.
+Model modules must be imported before metadata is read — each atom adds
+its own import line below the ``Base`` import.
+"""
 
 from logging.config import fileConfig
 
@@ -18,6 +23,13 @@ target_metadata = Base.metadata
 
 settings = Settings()
 config.set_main_option("sqlalchemy.url", settings.database_url)
+
+
+def _build_translate_map() -> dict[str, str | None] | None:
+    """Return a schema_translate_map for SQLite, else None."""
+    if settings.database_url.startswith("sqlite"):
+        return {settings.db_schema: None}
+    return None
 
 
 def run_migrations_offline() -> None:
@@ -40,11 +52,20 @@ def run_migrations_online() -> None:
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
     )
+    translate_map = _build_translate_map()
     with connectable.connect() as connection:
-        context.configure(
-            connection=connection,
-            target_metadata=target_metadata,
-        )
+        ctx_kwargs: dict[str, object] = {
+            "connection": connection,
+            "target_metadata": target_metadata,
+            "include_schemas": True,
+            "render_as_batch": settings.database_url.startswith("sqlite"),
+        }
+        if translate_map:
+            ctx_kwargs["execution_options"] = {
+                "schema_translate_map": translate_map,
+            }
+
+        context.configure(**ctx_kwargs)
         with context.begin_transaction():
             context.run_migrations()
 
