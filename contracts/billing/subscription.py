@@ -1,10 +1,13 @@
-"""Cross-module contract for subscription data (BILL-001).
+"""Cross-module contract for subscription data (BILL-001, BILL-002).
 
 Consumed by:
-- BILL-002 (subscription plans)
+- BILL-002 (subscription plans & entitlements)
+- API-001 (plan checks)
+- BILL-004 (customer portal)
 - OBSERV-001 (payment event notifications)
 """
 
+from dataclasses import dataclass, field
 from datetime import datetime
 from enum import StrEnum
 from uuid import UUID
@@ -32,3 +35,26 @@ class SubscriptionData(BaseModel):
     current_period_end: datetime | None
 
     model_config = {"from_attributes": True}
+
+
+@dataclass(frozen=True)
+class PlanEntitlements:
+    """Feature limits and flags for a subscription plan."""
+
+    plan_id: str
+    display_name: str
+    price_cents: int
+    opportunities_per_day: int
+    features: frozenset[str] = field(default_factory=frozenset)
+
+
+@dataclass(frozen=True)
+class UserPlanInfo:
+    """Resolved plan info for a user — returned by get_user_plan."""
+
+    user_id: UUID
+    plan_id: str
+    status: SubscriptionStatus
+    entitlements: PlanEntitlements
+    current_period_end: datetime | None
+    auto_renew: bool
