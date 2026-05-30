@@ -76,6 +76,16 @@ class Settings(BaseSettings):
         description="Slack incoming webhook URL for digest delivery",
     )
 
+    # --- Stripe / Billing ---
+    stripe_api_key: str = Field(
+        default="",
+        description="Stripe secret API key (sk_test_... or sk_live_...)",
+    )
+    stripe_webhook_secret: str = Field(
+        default="",
+        description="Stripe webhook endpoint signing secret (whsec_...)",
+    )
+
     # --- Rate Limiting ---
     rate_limit_tokens_per_minute: int = Field(
         default=100,
