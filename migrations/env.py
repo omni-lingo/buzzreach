@@ -11,6 +11,7 @@ from alembic import context
 from sqlalchemy import engine_from_config, pool
 
 from src.backend.db.base import Base
+from src.backend.models.opportunity import Opportunity  # noqa: F401 — register model metadata
 from src.backend.models.seen_url import SeenUrl  # noqa: F401 — register model metadata
 from src.backend.models.user import User  # noqa: F401 — register model metadata
 from src.backend.settings import Settings
