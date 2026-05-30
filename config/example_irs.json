@@ -1,0 +1,17 @@
+{
+  "slug": "irs-penalty-calculator",
+  "product_url": "https://irscalculator.example.com",
+  "pitch": "Instantly calculate IRS penalties and interest for late filing, late payment, and estimated tax underpayment",
+  "niche": "tax",
+  "keywords": [
+    "irs penalty",
+    "cp14 notice",
+    "tax penalty calculator",
+    "late filing penalty",
+    "estimated tax penalty"
+  ],
+  "tone": "helpful and empathetic",
+  "mention": "IRS Penalty Calculator at irscalculator.example.com",
+  "freshness": "d",
+  "max_queries": 5
+}

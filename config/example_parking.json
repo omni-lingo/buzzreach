@@ -1,0 +1,16 @@
+{
+  "slug": "parking-appeal-mate",
+  "product_url": "https://parkingappealmate.example.com",
+  "pitch": "Fight unfair parking tickets with AI-drafted appeals that win",
+  "niche": "legal-tech",
+  "keywords": [
+    "parking ticket appeal",
+    "contest parking fine",
+    "parking ticket help",
+    "fight parking ticket"
+  ],
+  "tone": "confident and reassuring",
+  "mention": "ParkingAppealMate at parkingappealmate.example.com",
+  "freshness": "d",
+  "max_queries": 3
+}
