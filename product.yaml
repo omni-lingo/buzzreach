@@ -1,0 +1,90 @@
+# product.yaml — BuzzReach build definition (read first by the runner)
+# See BUZZREACH.md for product rationale, BUILD_RULES.md for code rules.
+product:
+  name: "BuzzReach"
+  description: "Find fresh community threads asking for help, draft a reply, human pastes it."
+  version: "0.1.0"
+
+infrastructure:
+  database:
+    type: sqlite           # MVP: single-file SQLite (AD-4). Postgres-compatible models.
+    version: "3"
+    path: "data/buzzreach.db"
+    schemas:
+      - name: "buzzreach"
+        owner: "this_product"
+    # SQLite has no native schemas; CORE-001 binds the "buzzreach" schema name
+    # via ATTACH + a SQLAlchemy schema_translate_map so models stay schema-qualified
+    # (BUILD_RULES §2) and remain portable to Postgres with zero model changes.
+  cache:
+    type: null             # MVP needs no cache; dedup is a SQL lookup (AD-4).
+  storage:
+    type: local            # No object storage in MVP.
+  message_queue: null
+
+backend:
+  framework: fastapi       # Thin API for listing/marking opportunities (AD-3).
+  language: python
+  language_version: "3.12"
+  directory: "src/backend"
+  port: 8000
+  orm: sqlalchemy
+  migration_tool: alembic
+
+frontend:
+  framework: none          # Out of scope for MVP — delivery is an email/Slack digest (§7).
+
+jobs:
+  framework: cron          # Scheduled scan every few hours (§7).
+  queues: []
+  beat_schedule: false
+
+auth:
+  type: jwt                # API-level auth via JWT bearer tokens
+  algorithm: HS256         # Symmetric key (HMAC); shared secret from env
+
+# Runner/build behavior. Overrides RUNNER_FACTORY §6 step 13 and §16 effort-based
+# model selection: use Opus 4.6 for EVERY atom (S/M/L), every build and every fix
+# cycle — quality over cost (the AI-draft quality bar in BUZZREACH.md §6 is the
+# make-or-break). The runner's load_config should treat `model` as a hard override
+# of effort-based selection. Equivalent CLI: `run.py --model claude-opus-4-6`.
+build:
+  model: "claude-opus-4-6"   # all builds — do NOT fall back to Sonnet for S atoms
+  model_override: true       # ignore effort→model mapping; turn limits still apply
+
+# Functional areas. depends_on is module-level (atom-level deps live in specs).
+modules:
+  - name: "infra"
+    depends_on: []
+  - name: "auth"           # User model, JWT service, rate limiting, audit logging
+    depends_on: ["infra"]
+  - name: "core"           # DB base + models (seen_urls, opportunities, audit log)
+    depends_on: ["infra"]
+  - name: "config"         # Per-product JSON config (url, pitch, keywords, tone)
+    depends_on: ["infra"]
+  - name: "discovery"      # Google time-filtered search → candidate URLs (AD-1)
+    depends_on: ["config"]
+  - name: "extraction"     # Readability-style content extraction (AD-5)
+    depends_on: ["infra"]
+  - name: "filter"         # Dedup (SQL) + keyword pre-filter (AD-4, AD-6)
+    depends_on: ["core", "config"]
+  - name: "ai"             # Haiku relevance scoring + Sonnet drafting (AD-6)
+    depends_on: ["infra", "extraction", "config"]
+  - name: "pipeline"       # Tiered orchestration of the whole loop (AD-6)
+    depends_on: ["discovery", "extraction", "filter", "ai", "core"]
+  - name: "delivery"       # Build + send the digest (§7)
+    depends_on: ["core"]
+  - name: "observability"  # Metrics, monitoring, health checks
+    depends_on: ["core", "auth"]
+  - name: "jobs"           # Cron entrypoint: scan per config, then deliver (audit logged)
+    depends_on: ["pipeline", "delivery", "config", "auth", "observability"]
+  - name: "api"            # Thin FastAPI surface to list/mark opportunities (auth-protected)
+    depends_on: ["core", "auth"]
+  - name: "dashboard"      # Metrics dashboard (what's working?)
+    depends_on: ["api", "observability"]
+
+# No shared database with other products in MVP.
+cross_product_reads: []
+
+# Custom gates beyond the base 21 (Appendix C). None for MVP.
+custom_gates: []
