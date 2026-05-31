@@ -1,7 +1,7 @@
 """User ORM model for the auth module (AUTH-001).
 
 Columns: id (UUID PK), username, email, password_hash, api_key,
-is_active, created_at, updated_at.
+is_active, email_verified, created_at, updated_at.
 
 Hashing is handled by the service layer (AUTH-002), not here.
 """
@@ -54,6 +54,11 @@ class User(Base):
     is_active: Mapped[bool] = mapped_column(
         Boolean,
         default=True,
+        nullable=False,
+    )
+    email_verified: Mapped[bool] = mapped_column(
+        Boolean,
+        default=False,
         nullable=False,
     )
     created_at: Mapped[datetime] = mapped_column(

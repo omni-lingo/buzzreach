@@ -12,10 +12,14 @@ from sqlalchemy import engine_from_config, pool
 
 from src.backend.db.base import Base
 from src.backend.models.audit_log import AuditLog  # noqa: F401 — register model metadata
+from src.backend.models.email_token import EmailToken  # noqa: F401 — register model metadata
 from src.backend.models.metric import Metric  # noqa: F401 — register model metadata
 from src.backend.models.opportunity import Opportunity  # noqa: F401 — register model metadata
 from src.backend.models.seen_url import SeenUrl  # noqa: F401 — register model metadata
-from src.backend.models.stripe_customer import StripeCustomer  # noqa: F401 — register model metadata
+from src.backend.models.stripe_customer import (
+    StripeCustomer,  # noqa: F401 — register model metadata
+)
+from src.backend.models.subscription import Subscription  # noqa: F401 — register model metadata
 from src.backend.models.user import User  # noqa: F401 — register model metadata
 from src.backend.settings import Settings
 
