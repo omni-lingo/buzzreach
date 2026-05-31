@@ -20,5 +20,10 @@ Auto-generated after L3 (routes).
 | GET | `/api/v1/dashboard` | Dashboard summary (today's stats) |
 | GET | `/api/v1/dashboard/stats` | Per-niche metric aggregation |
 | GET | `/api/v1/dashboard/errors` | Recent error audit log entries |
+| GET | `/api/v1/templates` | List templates (global + user-owned, filter by category/search) |
+| GET | `/api/v1/templates/{id}` | Get single template by ID |
+| POST | `/api/v1/templates` | Create custom template (auth required) |
+| PUT | `/api/v1/templates/{id}` | Update own template (auth required) |
+| DELETE | `/api/v1/templates/{id}` | Delete own template (auth required) |
 
 See `openapi.json` for full specification.

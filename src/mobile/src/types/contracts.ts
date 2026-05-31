@@ -84,3 +84,52 @@ export interface ActionResponse {
   posted_url: string | null;
   created_at: string;
 }
+
+/**
+ * Mirrors contracts/quality/draft_template.py — TemplateCategory.
+ * Valid template categories for platform or style.
+ */
+export type TemplateCategory =
+  | "reddit"
+  | "quora"
+  | "blog"
+  | "technical"
+  | "casual"
+  | "professional"
+  | "empathetic"
+  | "persuasive";
+
+/** Mirrors contracts/quality/draft_template.py — TemplateResponse. */
+export interface TemplateData {
+  id: string;
+  user_id: string | null;
+  name: string;
+  category: TemplateCategory;
+  description: string;
+  text: string;
+  is_global: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+/** Template list response from GET /api/v1/templates. */
+export interface TemplateListResponse {
+  items: TemplateData[];
+  total: number;
+}
+
+/** Request body for creating a template. */
+export interface TemplateCreateRequest {
+  name: string;
+  category: TemplateCategory;
+  description: string;
+  text: string;
+}
+
+/** Request body for updating a template. */
+export interface TemplateUpdateRequest {
+  name?: string;
+  category?: TemplateCategory;
+  description?: string;
+  text?: string;
+}

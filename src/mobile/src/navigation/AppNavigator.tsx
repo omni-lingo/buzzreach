@@ -22,6 +22,7 @@ import useColorTheme from "../hooks/useColorTheme";
 import FeedScreen from "../screens/FeedScreen";
 import LoginScreen from "../screens/LoginScreen";
 import SettingsScreen from "../screens/SettingsScreen";
+import TemplatesPage from "../screens/TemplatesPage";
 import { useAuthStore } from "../store/authStore";
 
 type AuthStackParams = {
@@ -30,6 +31,7 @@ type AuthStackParams = {
 
 type MainTabParams = {
   Feed: undefined;
+  Templates: undefined;
   Settings: undefined;
 };
 
@@ -101,6 +103,16 @@ function MainTabs(): React.JSX.Element {
           tabBarLabel: "Feed",
           tabBarIcon: ({ color }) => (
             <Text style={{ color, fontSize: 20 }}>&#9733;</Text>
+          ),
+        }}
+      />
+      <MainTab.Screen
+        name="Templates"
+        component={TemplatesPage}
+        options={{
+          title: "Templates",
+          tabBarIcon: ({ color }) => (
+            <Text style={{ color, fontSize: 20 }}>&#9998;</Text>
           ),
         }}
       />
