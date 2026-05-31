@@ -1,0 +1,7 @@
+# BuzzReach scheduled jobs — add to system crontab with: crontab crontab.example
+#
+# Scan job: runs every 2 hours, discovers new opportunities and sends digest
+0 */2 * * * cd /app && python -m src.backend.jobs.scan >> /var/log/buzzreach/scan.log 2>&1
+
+# Health check: runs every hour, alerts on scan failures or overdue scans
+0 * * * * cd /app && python -m src.backend.jobs.health_check >> /var/log/buzzreach/health.log 2>&1
