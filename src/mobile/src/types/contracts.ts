@@ -62,3 +62,25 @@ export interface OpportunitiesListResponse {
   items: OpportunityData[];
   total: number;
 }
+
+/**
+ * Mirrors contracts/features/opportunity_action.py — ActionType.
+ * Valid action types for opportunity tracking.
+ */
+export type ActionType = "viewed" | "copied" | "posted" | "archived";
+
+/** Request body for logging an action on an opportunity. */
+export interface LogActionRequest {
+  action_type: ActionType;
+  posted_url?: string;
+}
+
+/** Response from logging an action. */
+export interface ActionResponse {
+  id: string;
+  opportunity_id: string;
+  user_id: string;
+  action_type: string;
+  posted_url: string | null;
+  created_at: string;
+}

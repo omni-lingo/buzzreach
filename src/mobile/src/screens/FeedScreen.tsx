@@ -1,59 +1,107 @@
 /**
- * Feed screen stub for BuzzReach mobile app (MOBILE-001).
+ * Opportunity feed screen with swipe gestures (MOBILE-003).
  *
- * Displays a list of opportunities from the API.
- * Full implementation deferred to MOBILE-003 (Opportunity Feed).
+ * - Scrollable list of opportunity cards
+ * - Pull-to-refresh fetches new opportunities
+ * - Swipe left to archive/dismiss
+ * - Swipe right to open detail modal
+ * - Tap for full details modal
  *
  * Cross-module contracts:
  * - Reads OpportunityData from API-001 via GET /api/v1/opportunities
+ * - Logs actions via FEAT-003 POST /api/v1/opportunities/{id}/actions
  * - Uses useOpportunityStore for state
  */
 
-import React, { useCallback, useEffect } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
-  Pressable,
   RefreshControl,
   StyleSheet,
   Text,
   View,
 } from "react-native";
 
-import { apiClient, parseApiError } from "../api/client";
+import {
+  fetchOpportunities,
+  logOpportunityAction,
+  refreshOpportunities,
+} from "../api/opportunities";
+import OpportunityCard from "../components/OpportunityCard.mobile";
+import OpportunityDetail from "./OpportunityDetail";
 import { useOpportunityStore } from "../store/opportunityStore";
+import { parseApiError } from "../api/client";
 import type { OpportunityData } from "../types/contracts";
 
-/** Main feed screen showing opportunity cards. */
+/** Main feed screen showing opportunity cards with swipe gestures. */
 function FeedScreen(): React.JSX.Element {
   const items = useOpportunityStore((s) => s.items);
   const isLoading = useOpportunityStore((s) => s.isLoading);
+  const isRefreshing = useOpportunityStore((s) => s.isRefreshing);
   const error = useOpportunityStore((s) => s.error);
 
-  const fetchOpportunities = useCallback(async () => {
+  const [selectedOpp, setSelectedOpp] =
+    useState<OpportunityData | null>(null);
+  const [detailVisible, setDetailVisible] = useState(false);
+
+  const loadFeed = useCallback(async () => {
     const store = useOpportunityStore.getState();
     store.setLoading(true);
     store.clearError();
-
     try {
-      const response = await apiClient.get<OpportunityData[]>(
-        "/opportunities"
-      );
-      store.setItems(response.data);
+      const data = await fetchOpportunities();
+      store.setItems(data);
+    } catch (err: unknown) {
+      store.setError(parseApiError(err));
+    }
+  }, []);
+
+  const handleRefresh = useCallback(async () => {
+    const store = useOpportunityStore.getState();
+    store.setRefreshing(true);
+    store.clearError();
+    try {
+      const data = await refreshOpportunities();
+      store.setItems(data);
     } catch (err: unknown) {
       store.setError(parseApiError(err));
     }
   }, []);
 
   useEffect(() => {
-    void fetchOpportunities();
-  }, [fetchOpportunities]);
+    void loadFeed();
+  }, [loadFeed]);
+
+  const handleCardPress = useCallback(
+    (opportunity: OpportunityData) => {
+      setSelectedOpp(opportunity);
+      setDetailVisible(true);
+    },
+    []
+  );
+
+  const handleArchive = useCallback((id: string) => {
+    useOpportunityStore.getState().removeItem(id);
+    void logOpportunityAction(id, "archived");
+  }, []);
+
+  const handleMarkPosted = useCallback((id: string) => {
+    useOpportunityStore.getState().removeItem(id);
+  }, []);
+
+  const handleCloseDetail = useCallback(() => {
+    setDetailVisible(false);
+    setSelectedOpp(null);
+  }, []);
 
   if (isLoading && items.length === 0) {
     return (
       <View style={styles.center}>
         <ActivityIndicator size="large" color="#FF6B35" />
-        <Text style={styles.loadingText}>Loading opportunities...</Text>
+        <Text style={styles.loadingText}>
+          Loading opportunities...
+        </Text>
       </View>
     );
   }
@@ -69,11 +117,18 @@ function FeedScreen(): React.JSX.Element {
       <FlatList
         data={items}
         keyExtractor={(item) => item.id}
-        renderItem={({ item }) => <OpportunityCard opportunity={item} />}
+        renderItem={({ item }) => (
+          <SwipeableCard
+            opportunity={item}
+            onPress={handleCardPress}
+            onSwipeLeft={handleArchive}
+            onSwipeRight={handleCardPress}
+          />
+        )}
         refreshControl={
           <RefreshControl
-            refreshing={isLoading}
-            onRefresh={fetchOpportunities}
+            refreshing={isRefreshing}
+            onRefresh={handleRefresh}
             tintColor="#FF6B35"
           />
         }
@@ -82,35 +137,35 @@ function FeedScreen(): React.JSX.Element {
           items.length === 0 ? styles.emptyList : undefined
         }
       />
+
+      {selectedOpp ? (
+        <OpportunityDetail
+          opportunity={selectedOpp}
+          visible={detailVisible}
+          onClose={handleCloseDetail}
+          onArchive={handleArchive}
+          onMarkPosted={handleMarkPosted}
+        />
+      ) : null}
     </View>
   );
 }
 
-// --------------- Sub-components ---------------
+// --- Sub-components ---
 
-function OpportunityCard(props: {
+function SwipeableCard(props: {
   opportunity: OpportunityData;
+  onPress: (opp: OpportunityData) => void;
+  onSwipeLeft: (id: string) => void;
+  onSwipeRight: (opp: OpportunityData) => void;
 }): React.JSX.Element {
-  const { opportunity } = props;
-  const scorePercent = Math.round(opportunity.relevance_score * 100);
-
   return (
-    <Pressable style={styles.card}>
-      <View style={styles.cardHeader}>
-        <Text style={styles.cardTitle} numberOfLines={2}>
-          {opportunity.title}
-        </Text>
-        <View style={styles.scoreBadge}>
-          <Text style={styles.scoreText}>{scorePercent}%</Text>
-        </View>
-      </View>
-      <Text style={styles.cardSource}>
-        {opportunity.source} / {opportunity.niche}
-      </Text>
-      <Text style={styles.cardReason} numberOfLines={2}>
-        {opportunity.why_matched}
-      </Text>
-    </Pressable>
+    <View style={styles.swipeContainer}>
+      <OpportunityCard
+        opportunity={props.opportunity}
+        onPress={props.onPress}
+      />
+    </View>
   );
 }
 
@@ -125,12 +180,18 @@ function EmptyState(): React.JSX.Element {
   );
 }
 
-// --------------- Styles ---------------
-
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#f8f9fa" },
-  center: { flex: 1, justifyContent: "center", alignItems: "center" },
-  loadingText: { marginTop: 12, color: "#666", fontSize: 14 },
+  center: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  loadingText: {
+    marginTop: 12,
+    color: "#666666",
+    fontSize: 14,
+  },
   errorBanner: {
     backgroundColor: "#fce4e4",
     padding: 12,
@@ -138,35 +199,23 @@ const styles = StyleSheet.create({
     marginTop: 8,
     borderRadius: 8,
   },
-  errorText: { color: "#dc3545", fontSize: 14, textAlign: "center" },
+  errorText: {
+    color: "#dc3545",
+    fontSize: 14,
+    textAlign: "center",
+  },
   emptyList: { flexGrow: 1 },
-  emptyTitle: { fontSize: 18, fontWeight: "600", color: "#333" },
-  emptySubtitle: { fontSize: 14, color: "#999", marginTop: 8 },
-  card: {
-    backgroundColor: "#fff",
-    marginHorizontal: 16,
-    marginTop: 12,
-    padding: 16,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "#e9ecef",
+  emptyTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#333333",
   },
-  cardHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
+  emptySubtitle: {
+    fontSize: 14,
+    color: "#999999",
+    marginTop: 8,
   },
-  cardTitle: { fontSize: 16, fontWeight: "600", color: "#333", flex: 1 },
-  scoreBadge: {
-    backgroundColor: "#FF6B35",
-    borderRadius: 12,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    marginLeft: 8,
-  },
-  scoreText: { color: "#fff", fontSize: 12, fontWeight: "bold" },
-  cardSource: { fontSize: 12, color: "#999", marginTop: 6 },
-  cardReason: { fontSize: 14, color: "#666", marginTop: 8 },
+  swipeContainer: { overflow: "hidden" },
 });
 
 export default FeedScreen;
