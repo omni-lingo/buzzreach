@@ -22,10 +22,19 @@ from contracts.billing.usage import (
     MonthlyCost,
     PlanQuota,
     QuotaStatus,
+    UsageDisplay,
     UsageSnapshot,
 )
-from src.backend.models.subscription import Subscription
-from src.backend.models.usage import DailyUsage
+from src.backend.services.usage_queries import (
+    compute_monthly_cost,
+    days_until_renewal,
+    format_usage_summary,
+    get_or_create_today,
+    get_today,
+    get_usage_range,
+    resolve_plan_id,
+    row_to_snapshot,
+)
 
 log = logging.getLogger("buzzreach.billing")
 
@@ -57,7 +66,7 @@ class UsageService:
         self, user_id: UUID, opportunities_count: int
     ) -> None:
         """Increment daily opportunity count after a scan completes."""
-        row = self._get_or_create_today(user_id)
+        row = get_or_create_today(self._session, user_id)
         row.opportunities_found += opportunities_count
         self._session.commit()
         log.info(
@@ -71,7 +80,7 @@ class UsageService:
 
     def record_api_call(self, user_id: UUID) -> None:
         """Increment daily API call count."""
-        row = self._get_or_create_today(user_id)
+        row = get_or_create_today(self._session, user_id)
         row.api_calls += 1
         self._session.commit()
 
@@ -83,7 +92,7 @@ class UsageService:
         stripe_cost: Decimal = Decimal("0"),
     ) -> None:
         """Add cost components to today's usage row."""
-        row = self._get_or_create_today(user_id)
+        row = get_or_create_today(self._session, user_id)
         row.ai_cost += ai_cost
         row.search_cost += search_cost
         row.stripe_cost += stripe_cost
@@ -97,11 +106,62 @@ class UsageService:
             },
         )
 
+    def record_notification(
+        self, user_id: UUID, channel: str
+    ) -> None:
+        """Increment email or push notification count for today."""
+        row = get_or_create_today(self._session, user_id)
+        if channel == "email":
+            row.email_sent += 1
+        elif channel == "push":
+            row.push_sent += 1
+        self._session.commit()
+        log.info(
+            "Notification recorded",
+            extra={"user_id": str(user_id), "channel": channel},
+        )
+
+    def record_draft_regeneration(self, user_id: UUID) -> None:
+        """Increment daily draft regeneration count."""
+        row = get_or_create_today(self._session, user_id)
+        row.drafts_regenerated += 1
+        self._session.commit()
+
+    def check_and_record_scan(
+        self, user_id: UUID, opportunities_count: int
+    ) -> QuotaStatus:
+        """Pipeline integration: check quota, record only if allowed.
+
+        Returns the QuotaStatus. If exceeded, does NOT record the scan.
+        """
+        status = self.is_quota_exceeded(user_id)
+        if status.exceeded:
+            log.info(
+                "Scan blocked by quota",
+                extra={
+                    "user_id": str(user_id),
+                    "plan_id": status.plan_id,
+                    "current": status.current,
+                    "limit": status.limit,
+                },
+            )
+            return status
+
+        self.record_scan(user_id, opportunities_count)
+        updated = self.is_quota_exceeded(user_id)
+        return QuotaStatus(
+            exceeded=False,
+            current=updated.current,
+            limit=updated.limit,
+            plan_id=updated.plan_id,
+            upgrade_message=None,
+        )
+
     def is_quota_exceeded(self, user_id: UUID) -> QuotaStatus:
         """Check if the user has hit their daily opportunity limit."""
-        plan_id = self._resolve_plan_id(user_id)
+        plan_id = resolve_plan_id(self._session, user_id)
         quota = PLAN_QUOTAS.get(plan_id, PLAN_QUOTAS["free"])
-        row = self._get_today(user_id)
+        row = get_today(self._session, user_id)
         current = row.opportunities_found if row else 0
         exceeded = current >= quota.opportunities_per_day
 
@@ -117,7 +177,7 @@ class UsageService:
 
     def get_usage_today(self, user_id: UUID) -> UsageSnapshot:
         """Return current day's usage snapshot."""
-        row = self._get_today(user_id)
+        row = get_today(self._session, user_id)
         today = date.today()
 
         if row is None:
@@ -132,29 +192,11 @@ class UsageService:
                 cost_estimate=Decimal("0"),
             )
 
-        return self._row_to_snapshot(row)
+        return row_to_snapshot(row)
 
     def get_monthly_cost(self, user_id: UUID) -> MonthlyCost:
         """Return estimated cost breakdown for the current month."""
-        today = date.today()
-        month_start = today.replace(day=1)
-        rows = self._get_usage_range(user_id, month_start, today)
-
-        totals = self._sum_costs(rows)
-
-        sub = self._get_subscription(user_id)
-        period_start = sub.current_period_start if sub else None
-        period_end = sub.current_period_end if sub else None
-
-        return MonthlyCost(
-            user_id=user_id,
-            stripe_cost=totals["stripe"],
-            ai_cost=totals["ai"],
-            search_cost=totals["search"],
-            total=totals["stripe"] + totals["ai"] + totals["search"],
-            period_start=period_start,
-            period_end=period_end,
-        )
+        return compute_monthly_cost(self._session, user_id)
 
     def get_usage_history(
         self, user_id: UUID, days: int = _DEFAULT_HISTORY_DAYS
@@ -162,100 +204,33 @@ class UsageService:
         """Return usage snapshots for the last N days, newest first."""
         today = date.today()
         start = today - timedelta(days=days)
-        rows = self._get_usage_range(user_id, start, today)
+        rows = get_usage_range(self._session, user_id, start, today)
         rows.sort(key=lambda r: r.usage_date, reverse=True)
-        return [self._row_to_snapshot(r) for r in rows]
+        return [row_to_snapshot(r) for r in rows]
 
     def get_rate_limit(self, user_id: UUID) -> int:
         """Return the API calls per minute limit for the user's plan."""
-        plan_id = self._resolve_plan_id(user_id)
+        plan_id = resolve_plan_id(self._session, user_id)
         quota = PLAN_QUOTAS.get(plan_id, PLAN_QUOTAS["free"])
         return quota.api_calls_per_minute
 
-    # --- Private helpers ---
+    def get_usage_display(self, user_id: UUID) -> UsageDisplay:
+        """Return frontend-facing usage bar data for settings page."""
+        plan_id = resolve_plan_id(self._session, user_id)
+        quota = PLAN_QUOTAS.get(plan_id, PLAN_QUOTAS["free"])
+        row = get_today(self._session, user_id)
+        current = row.opportunities_found if row else 0
+        limit = quota.opportunities_per_day
 
-    def _get_or_create_today(self, user_id: UUID) -> DailyUsage:
-        """Return today's usage row, creating it if absent."""
-        today = date.today()
-        row = (
-            self._session.query(DailyUsage)
-            .filter_by(user_id=user_id, usage_date=today)
-            .first()
+        summary = format_usage_summary(current, limit, plan_id)
+        monthly = self.get_monthly_cost(user_id)
+        renewal_days = days_until_renewal(self._session, user_id)
+
+        return UsageDisplay(
+            current=current,
+            limit=limit,
+            plan_id=plan_id,
+            summary=summary,
+            estimated_monthly_cost=monthly.total,
+            days_until_renewal=renewal_days,
         )
-        if row is not None:
-            return row
-
-        row = DailyUsage(user_id=user_id, usage_date=today)
-        self._session.add(row)
-        self._session.flush()
-        return row
-
-    def _get_today(self, user_id: UUID) -> DailyUsage | None:
-        """Return today's usage row or None."""
-        return (
-            self._session.query(DailyUsage)
-            .filter_by(user_id=user_id, usage_date=date.today())
-            .first()
-        )
-
-    def _get_usage_range(
-        self, user_id: UUID, start: date, end: date
-    ) -> list[DailyUsage]:
-        """Return usage rows in [start, end] inclusive."""
-        return (
-            self._session.query(DailyUsage)
-            .filter(
-                DailyUsage.user_id == user_id,
-                DailyUsage.usage_date >= start,
-                DailyUsage.usage_date <= end,
-            )
-            .all()
-        )
-
-    def _get_subscription(
-        self, user_id: UUID
-    ) -> Subscription | None:
-        """Look up the user's subscription row."""
-        return (
-            self._session.query(Subscription)
-            .filter_by(user_id=user_id)
-            .first()
-        )
-
-    def _resolve_plan_id(self, user_id: UUID) -> str:
-        """Return the user's active plan ID, defaulting to free."""
-        sub = self._get_subscription(user_id)
-        if sub is None or sub.status not in ("active", "past_due"):
-            return "free"
-        return sub.plan_id
-
-    @staticmethod
-    def _row_to_snapshot(row: DailyUsage) -> UsageSnapshot:
-        """Convert a DailyUsage row to a UsageSnapshot contract."""
-        cost = row.stripe_cost + row.ai_cost + row.search_cost
-        return UsageSnapshot(
-            user_id=row.user_id,
-            date=row.usage_date,
-            opportunities_found=row.opportunities_found,
-            api_calls=row.api_calls,
-            email_sent=row.email_sent,
-            push_sent=row.push_sent,
-            drafts_regenerated=row.drafts_regenerated,
-            cost_estimate=cost,
-        )
-
-    @staticmethod
-    def _sum_costs(
-        rows: list[DailyUsage],
-    ) -> dict[str, Decimal]:
-        """Sum cost components across multiple usage rows."""
-        totals: dict[str, Decimal] = {
-            "stripe": Decimal("0"),
-            "ai": Decimal("0"),
-            "search": Decimal("0"),
-        }
-        for row in rows:
-            totals["stripe"] += row.stripe_cost
-            totals["ai"] += row.ai_cost
-            totals["search"] += row.search_cost
-        return totals

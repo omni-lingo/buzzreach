@@ -57,3 +57,19 @@ class PlanQuota:
 
     opportunities_per_day: int
     api_calls_per_minute: int
+
+
+@dataclass(frozen=True)
+class UsageDisplay:
+    """Frontend-facing usage data for settings / usage bar.
+
+    Shows current vs. limit, formatted summary, estimated cost,
+    and days until next billing cycle.
+    """
+
+    current: int
+    limit: int
+    plan_id: str
+    summary: str
+    estimated_monthly_cost: Decimal
+    days_until_renewal: int | None
