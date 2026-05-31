@@ -198,7 +198,7 @@ class TestOpportunityDataContract:
         expected = {
             "id", "niche", "url", "title", "source",
             "why_matched", "relevance_score", "draft_reply",
-            "status", "created_at", "delivered_at",
+            "edited_draft", "status", "created_at", "delivered_at",
         }
         assert set(OpportunityData.model_fields.keys()) == expected
 

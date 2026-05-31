@@ -63,6 +63,11 @@ class Opportunity(Base):
         Text,
         nullable=False,
     )
+    edited_draft: Mapped[str | None] = mapped_column(
+        Text,
+        nullable=True,
+        default=None,
+    )
     status: Mapped[OpportunityStatus] = mapped_column(
         default=OpportunityStatus.NEW,
         nullable=False,

@@ -28,6 +28,7 @@ class OpportunityData(BaseModel):
     why_matched: str
     relevance_score: float = Field(ge=0.0, le=1.0)
     draft_reply: str
+    edited_draft: str | None = None
     status: str = "new"
     created_at: datetime
     delivered_at: datetime | None = None

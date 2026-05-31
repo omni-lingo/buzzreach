@@ -62,15 +62,47 @@ def draft_reply(
     )
 
 
+def regenerate_draft(
+    content: ExtractedContent,
+    config: ProductConfig,
+    client: AiClient,
+    tone_override: str,
+) -> str:
+    """Regenerate a draft with a different tone, same URL context.
+
+    Args:
+        content: Extracted page content (title, body, comments).
+        config: Product configuration (tone, pitch, mention, product_url).
+        client: AiClient instance for calling Sonnet.
+        tone_override: New tone to use instead of config.tone.
+
+    Returns:
+        The regenerated reply text.
+    """
+    user_prompt = _build_user_prompt(content, config, tone_override)
+    log.info(
+        "Regenerating draft",
+        extra={"tone_override": tone_override, "url": content.url},
+    )
+    return client.complete(
+        model=SONNET,
+        system=_SYSTEM_PROMPT,
+        user=user_prompt,
+        max_tokens=_MAX_TOKENS,
+    )
+
+
 def _build_user_prompt(
     content: ExtractedContent,
     config: ProductConfig,
+    tone_override: str | None = None,
 ) -> str:
     """Assemble the user message from content and config."""
+    tone = tone_override or config.tone
     comments_block = _format_comments(content.comments)
     return (
         f"## Your tone\n"
-        f"{config.tone}\n\n"
+        f"{tone}\n\n"
         f"## Product to mention\n"
         f"Name: {config.mention}\n"
         f"URL: {config.product_url}\n"

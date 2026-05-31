@@ -29,10 +29,25 @@ export interface Opportunity {
   why_matched: string;
   relevance_score: number;
   draft_reply: string;
+  edited_draft: string | null;
   status: string;
   created_at: string;
   delivered_at: string | null;
 }
+
+export interface DraftResponse {
+  original_draft: string;
+  edited_draft: string | null;
+  current_text: string;
+}
+
+export type DraftTone =
+  | "professional"
+  | "casual"
+  | "humorous"
+  | "technical"
+  | "empathetic"
+  | "enthusiastic";
 
 const API_BASE = "/api/v1";
 
@@ -84,6 +99,55 @@ export async function fetchFunnel(params?: {
   const url = `${API_BASE}/analytics/funnel${qs ? `?${qs}` : ""}`;
   const res = await fetch(url);
   if (!res.ok) throw new Error("Failed to fetch funnel data");
+  return res.json();
+}
+
+export async function saveDraft(
+  opportunityId: string,
+  editedText: string
+): Promise<DraftResponse> {
+  const res = await fetch(
+    `${API_BASE}/opportunities/${opportunityId}/draft`,
+    {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ edited_text: editedText }),
+    }
+  );
+  if (!res.ok) {
+    const err: { detail: { message: string } } = await res.json();
+    throw new Error(err.detail.message);
+  }
+  return res.json();
+}
+
+export async function discardDraft(
+  opportunityId: string
+): Promise<DraftResponse> {
+  const res = await fetch(
+    `${API_BASE}/opportunities/${opportunityId}/draft`,
+    { method: "DELETE" }
+  );
+  if (!res.ok) throw new Error("Failed to discard draft");
+  return res.json();
+}
+
+export async function regenerateDraft(
+  opportunityId: string,
+  tone: DraftTone
+): Promise<DraftResponse> {
+  const res = await fetch(
+    `${API_BASE}/opportunities/${opportunityId}/regenerate`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ tone }),
+    }
+  );
+  if (!res.ok) {
+    const err: { detail: { message: string } } = await res.json();
+    throw new Error(err.detail.message);
+  }
   return res.json();
 }
 
