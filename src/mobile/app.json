@@ -1,0 +1,43 @@
+{
+  "expo": {
+    "name": "BuzzReach",
+    "slug": "buzzreach",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#FF6B35"
+    },
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.buzzreach.app",
+      "infoPlist": {
+        "NSAppTransportSecurity": {
+          "NSAllowsLocalNetworking": true
+        }
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#FF6B35"
+      },
+      "package": "com.buzzreach.app"
+    },
+    "plugins": [
+      "expo-secure-store",
+      "expo-splash-screen"
+    ],
+    "extra": {
+      "apiBaseUrl": "http://localhost:8000",
+      "eas": {
+        "projectId": "buzzreach-mobile"
+      }
+    },
+    "scheme": "buzzreach"
+  }
+}

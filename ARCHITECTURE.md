@@ -91,7 +91,7 @@ The system is built in 5 layers following strict dependency rules:
 
 ### L4: Frontend
 
-**Dashboard**
+**Web Dashboard**
 - Live feed of discovered opportunities
 - Filter & search
 - Mark as "interested" / "archived"
@@ -102,6 +102,14 @@ The system is built in 5 layers following strict dependency rules:
 - Set delivery schedule (daily/weekly)
 - Choose delivery method (email/Slack)
 - API key management
+
+**Mobile App (React Native / Expo)**
+- Login via username/password or API key
+- Opportunity feed (stub, full impl in MOBILE-003)
+- Basic settings and logout
+- Auth token persisted via SecureStore (encrypted)
+- Bottom tab navigation (Feed, Settings)
+- Zustand state management (auth, opportunities, settings)
 
 ### L5: Tests
 
@@ -193,7 +201,7 @@ This catches contract breaks at import time, not runtime.
 | L1 | Python | SQLAlchemy + Alembic |
 | L2 | Python | Pydantic + asyncio |
 | L3 | Python | FastAPI |
-| L4 | TypeScript | React + Tailwind |
+| L4 | TypeScript | React + Tailwind (web), React Native + Expo (mobile) |
 | L5 | Python + TS | pytest + Playwright |
 
 ## Key Design Decisions
