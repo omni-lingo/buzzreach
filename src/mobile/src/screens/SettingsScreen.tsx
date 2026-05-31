@@ -27,6 +27,7 @@ import {
 } from "react-native";
 
 import { logout } from "../hooks/useAuth";
+import useColorTheme from "../hooks/useColorTheme";
 import { useAuthStore } from "../store/authStore";
 import { useSettingsStore } from "../store/settingsStore";
 
@@ -37,6 +38,7 @@ function SettingsScreen(): React.JSX.Element {
   const notificationsEnabled = useSettingsStore(
     (s) => s.notificationsEnabled
   );
+  const { colors } = useColorTheme();
 
   function handleLogout(): void {
     Alert.alert("Sign Out", "Are you sure you want to sign out?", [
@@ -51,67 +53,85 @@ function SettingsScreen(): React.JSX.Element {
 
   return (
     <ScrollView
-      style={styles.container}
+      style={[styles.container, { backgroundColor: colors.background }]}
       contentContainerStyle={styles.content}
     >
-      <SectionHeader title="Account" />
-      <View style={styles.card}>
-        <InfoRow label="Username" value={user?.username ?? "—"} />
-        <InfoRow label="Email" value={user?.email ?? "—"} />
+      <SectionHeader title="Account" color={colors.textTertiary} />
+      <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+        <InfoRow label="Username" value={user?.username ?? "—"} colors={colors} />
+        <InfoRow label="Email" value={user?.email ?? "—"} colors={colors} />
       </View>
 
-      <SectionHeader title="Configuration" />
-      <View style={styles.card}>
-        <Text style={styles.fieldLabel}>API Server URL</Text>
+      <SectionHeader title="Configuration" color={colors.textTertiary} />
+      <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+        <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>
+          API Server URL
+        </Text>
         <TextInput
-          style={styles.input}
+          style={[styles.input, { backgroundColor: colors.inputBg, borderColor: colors.borderStrong, color: colors.text }]}
           value={apiBaseUrl}
           onChangeText={useSettingsStore.getState().setApiBaseUrl}
           autoCapitalize="none"
           autoCorrect={false}
           keyboardType="url"
           placeholder="https://api.buzzreach.app"
-          placeholderTextColor="#999"
+          placeholderTextColor={colors.textTertiary}
         />
       </View>
 
-      <SectionHeader title="Notifications" />
-      <View style={styles.card}>
+      <SectionHeader title="Notifications" color={colors.textTertiary} />
+      <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
         <View style={styles.switchRow}>
-          <Text style={styles.switchLabel}>Push Notifications</Text>
+          <Text style={[styles.switchLabel, { color: colors.text }]}>
+            Push Notifications
+          </Text>
           <Switch
             value={notificationsEnabled}
             onValueChange={
               useSettingsStore.getState().setNotificationsEnabled
             }
-            trackColor={{ false: "#ddd", true: "#FF6B35" }}
+            trackColor={{ false: colors.switchTrack, true: colors.primary }}
           />
         </View>
       </View>
 
-      <Pressable style={styles.logoutButton} onPress={handleLogout}>
+      <Pressable style={[styles.logoutButton, { backgroundColor: colors.error }]} onPress={handleLogout}>
         <Text style={styles.logoutText}>Sign Out</Text>
       </Pressable>
 
-      <Text style={styles.version}>BuzzReach Mobile v1.0.0</Text>
+      <Text style={[styles.version, { color: colors.textTertiary }]}>
+        BuzzReach Mobile v1.0.0
+      </Text>
     </ScrollView>
   );
 }
 
 // --------------- Sub-components ---------------
 
-function SectionHeader(props: { title: string }): React.JSX.Element {
-  return <Text style={styles.sectionHeader}>{props.title}</Text>;
+function SectionHeader(props: {
+  title: string;
+  color: string;
+}): React.JSX.Element {
+  return (
+    <Text style={[styles.sectionHeader, { color: props.color }]}>
+      {props.title}
+    </Text>
+  );
 }
 
 function InfoRow(props: {
   label: string;
   value: string;
+  colors: { textSecondary: string; text: string };
 }): React.JSX.Element {
   return (
     <View style={styles.infoRow}>
-      <Text style={styles.infoLabel}>{props.label}</Text>
-      <Text style={styles.infoValue}>{props.value}</Text>
+      <Text style={[styles.infoLabel, { color: props.colors.textSecondary }]}>
+        {props.label}
+      </Text>
+      <Text style={[styles.infoValue, { color: props.colors.text }]}>
+        {props.value}
+      </Text>
     </View>
   );
 }
@@ -119,40 +139,34 @@ function InfoRow(props: {
 // --------------- Styles ---------------
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f8f9fa" },
+  container: { flex: 1 },
   content: { padding: 16, paddingBottom: 40 },
   sectionHeader: {
     fontSize: 13,
     fontWeight: "600",
-    color: "#999",
     textTransform: "uppercase",
     marginTop: 24,
     marginBottom: 8,
     marginLeft: 4,
   },
   card: {
-    backgroundColor: "#fff",
     borderRadius: 12,
     padding: 16,
     borderWidth: 1,
-    borderColor: "#e9ecef",
   },
   infoRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     paddingVertical: 8,
   },
-  infoLabel: { fontSize: 15, color: "#666" },
-  infoValue: { fontSize: 15, color: "#333", fontWeight: "500" },
-  fieldLabel: { fontSize: 13, color: "#666", marginBottom: 6 },
+  infoLabel: { fontSize: 15 },
+  infoValue: { fontSize: 15, fontWeight: "500" },
+  fieldLabel: { fontSize: 13, marginBottom: 6 },
   input: {
-    backgroundColor: "#f8f9fa",
     borderWidth: 1,
-    borderColor: "#ddd",
     borderRadius: 8,
     padding: 12,
     fontSize: 14,
-    color: "#333",
   },
   switchRow: {
     flexDirection: "row",
@@ -160,10 +174,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingVertical: 4,
   },
-  switchLabel: { fontSize: 15, color: "#333" },
+  switchLabel: { fontSize: 15 },
   logoutButton: {
     marginTop: 32,
-    backgroundColor: "#dc3545",
     borderRadius: 8,
     paddingVertical: 14,
     alignItems: "center",
@@ -171,7 +184,6 @@ const styles = StyleSheet.create({
   logoutText: { color: "#fff", fontSize: 16, fontWeight: "600" },
   version: {
     textAlign: "center",
-    color: "#ccc",
     fontSize: 12,
     marginTop: 24,
   },

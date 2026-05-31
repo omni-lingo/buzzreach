@@ -38,9 +38,9 @@ function getPasswordStrength(password: string): PasswordStrength {
 }
 
 function strengthColor(strength: PasswordStrength): string {
-  if (strength === "strong") return "#22c55e";
-  if (strength === "fair") return "#f59e0b";
-  return "#ef4444";
+  if (strength === "strong") return "var(--success-color)";
+  if (strength === "fair") return "var(--warning-color)";
+  return "var(--error-color)";
 }
 
 function strengthWidth(strength: PasswordStrength): string {

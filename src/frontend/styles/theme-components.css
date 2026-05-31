@@ -1,0 +1,154 @@
+/**
+ * Component-level theme overrides (QUALITY-001).
+ *
+ * Maps CSS custom properties from dark.css to BEM class selectors.
+ * Import after dark.css to apply theme colors to all components.
+ */
+
+/* ── Page containers ────────────────────────────────────── */
+.dashboard-page,
+.settings-page,
+.signup-page,
+.onboarding-wizard {
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+.dashboard-header,
+.settings-header {
+  background-color: var(--bg-primary);
+  border-bottom: 1px solid var(--border-color);
+}
+
+/* ── Cards ──────────────────────────────────────────────── */
+.opportunity-card,
+.card,
+.settings-section {
+  background-color: var(--card-bg);
+  border-color: var(--card-border);
+}
+
+.opp-title a {
+  color: var(--info-color);
+}
+
+.opp-source {
+  color: var(--text-secondary);
+}
+
+.opp-score {
+  color: var(--accent-primary);
+}
+
+.opp-draft {
+  background-color: var(--bg-tertiary);
+  color: var(--text-primary);
+}
+
+.opp-draft pre {
+  color: var(--text-primary);
+}
+
+/* ── Banners & states ───────────────────────────────────── */
+.error-banner {
+  background-color: var(--error-color);
+  color: var(--text-inverse);
+}
+
+.success-banner {
+  background-color: var(--success-color);
+  color: var(--text-inverse);
+}
+
+.empty-state {
+  color: var(--text-tertiary);
+}
+
+.loading-spinner {
+  color: var(--text-secondary);
+}
+
+/* ── Status badges ──────────────────────────────────────── */
+.status-badge {
+  border-color: var(--border-color);
+}
+
+.status-viewed {
+  background-color: var(--status-viewed);
+  color: var(--text-inverse);
+}
+
+.status-copied {
+  background-color: var(--status-copied);
+  color: var(--text-inverse);
+}
+
+.status-posted {
+  background-color: var(--status-posted);
+  color: var(--text-inverse);
+}
+
+.status-archived {
+  background-color: var(--status-archived);
+  color: var(--text-inverse);
+}
+
+/* ── Filters ────────────────────────────────────────────── */
+.opportunity-filter,
+.filter-group {
+  background-color: var(--card-bg);
+  border-color: var(--card-border);
+}
+
+/* ── Buttons ────────────────────────────────────────────── */
+.btn-copy-draft,
+.btn-mark-posted,
+.btn-refresh {
+  background-color: var(--btn-primary-bg);
+  color: var(--btn-primary-text);
+}
+
+.btn-archive,
+.archive-btn {
+  background-color: var(--bg-tertiary);
+  color: var(--text-primary);
+}
+
+/* ── Modals & overlays ──────────────────────────────────── */
+.bulk-confirm-overlay {
+  background-color: var(--overlay-bg);
+}
+
+.bulk-confirm-modal {
+  background-color: var(--card-bg);
+  border-color: var(--card-border);
+}
+
+/* ── Draft editor ───────────────────────────────────────── */
+.draft-editor,
+.draft-textarea {
+  background-color: var(--input-bg);
+  color: var(--input-text);
+  border-color: var(--input-border);
+}
+
+.tone-indicator {
+  background-color: var(--card-bg);
+  border-color: var(--card-border);
+}
+
+/* ── Wizard ─────────────────────────────────────────────── */
+.wizard-layout,
+.wizard-main,
+.wizard-preview {
+  background-color: var(--bg-primary);
+}
+
+/* ── Auth pages ─────────────────────────────────────────── */
+.password-strength {
+  background-color: var(--bg-tertiary);
+}
+
+.login-link a {
+  color: var(--info-color);
+}

@@ -10,6 +10,7 @@ import React, { useCallback, useMemo, useState } from "react";
 import type { OpportunitiesFilters } from "../api/opportunitiesClient";
 import OpportunityCard from "../components/OpportunityCard";
 import OpportunityFilter from "../components/OpportunityFilter";
+import ThemeToggle from "../components/ThemeToggle";
 import useOpportunities from "../hooks/useOpportunities";
 
 interface DashboardProps {
@@ -108,6 +109,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
     <button className="btn-refresh" onClick={onRefresh} type="button">
       Refresh
     </button>
+    <ThemeToggle />
   </header>
 );
 

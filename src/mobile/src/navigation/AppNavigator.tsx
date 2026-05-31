@@ -11,16 +11,14 @@
  * - Integrates with MOBILE-002 (push notification deep links)
  */
 
-import {
-  NavigationContainer,
-  type Theme,
-} from "@react-navigation/native";
+import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import React, { useEffect } from "react";
 import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 
 import { restoreAuth } from "../hooks/useAuth";
+import useColorTheme from "../hooks/useColorTheme";
 import FeedScreen from "../screens/FeedScreen";
 import LoginScreen from "../screens/LoginScreen";
 import SettingsScreen from "../screens/SettingsScreen";
@@ -44,39 +42,22 @@ const RootStack = createNativeStackNavigator<RootStackParams>();
 const AuthStack = createNativeStackNavigator<AuthStackParams>();
 const MainTab = createBottomTabNavigator<MainTabParams>();
 
-const NAV_THEME: Theme = {
-  dark: false,
-  colors: {
-    primary: "#FF6B35",
-    background: "#f8f9fa",
-    card: "#ffffff",
-    text: "#333333",
-    border: "#e9ecef",
-    notification: "#FF6B35",
-  },
-  fonts: {
-    regular: { fontFamily: "System", fontWeight: "400" },
-    medium: { fontFamily: "System", fontWeight: "500" },
-    bold: { fontFamily: "System", fontWeight: "700" },
-    heavy: { fontFamily: "System", fontWeight: "900" },
-  },
-};
-
 /** Auth-gated root navigator. */
 function AppNavigator(): React.JSX.Element {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const isInitialized = useAuthStore((s) => s.isInitialized);
+  const { navTheme, colors } = useColorTheme();
 
   useEffect(() => {
     void restoreAuth();
   }, []);
 
   if (!isInitialized) {
-    return <SplashLoading />;
+    return <SplashLoading colors={colors} />;
   }
 
   return (
-    <NavigationContainer theme={NAV_THEME}>
+    <NavigationContainer theme={navTheme}>
       <RootStack.Navigator screenOptions={{ headerShown: false }}>
         {isAuthenticated ? (
           <RootStack.Screen name="Main" component={MainTabs} />
@@ -99,12 +80,15 @@ function AuthScreens(): React.JSX.Element {
 
 /** Main tab navigator for authenticated users. */
 function MainTabs(): React.JSX.Element {
+  const { colors } = useColorTheme();
+
   return (
     <MainTab.Navigator
       screenOptions={{
-        tabBarActiveTintColor: "#FF6B35",
-        tabBarInactiveTintColor: "#999",
-        headerStyle: { backgroundColor: "#FF6B35" },
+        tabBarActiveTintColor: colors.primary,
+        tabBarInactiveTintColor: colors.textTertiary,
+        tabBarStyle: { backgroundColor: colors.card },
+        headerStyle: { backgroundColor: colors.primary },
         headerTintColor: "#fff",
         headerTitleStyle: { fontWeight: "600" },
       }}
@@ -135,13 +119,17 @@ function MainTabs(): React.JSX.Element {
 }
 
 /** Splash screen shown while restoring auth state. */
-function SplashLoading(): React.JSX.Element {
+function SplashLoading(props: {
+  colors: { primary: string; background: string };
+}): React.JSX.Element {
   return (
-    <View style={styles.splash}>
-      <Text style={styles.splashTitle}>BuzzReach</Text>
+    <View style={[styles.splash, { backgroundColor: props.colors.background }]}>
+      <Text style={[styles.splashTitle, { color: props.colors.primary }]}>
+        BuzzReach
+      </Text>
       <ActivityIndicator
         size="large"
-        color="#FF6B35"
+        color={props.colors.primary}
         style={styles.splashLoader}
       />
     </View>
@@ -153,12 +141,10 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#f8f9fa",
   },
   splashTitle: {
     fontSize: 36,
     fontWeight: "bold",
-    color: "#FF6B35",
     marginBottom: 24,
   },
   splashLoader: { marginTop: 16 },
