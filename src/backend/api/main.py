@@ -10,6 +10,7 @@ import logging
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from src.backend.api.push import router as push_router
 from src.backend.api.slack_webhooks import router as slack_router
 from src.backend.api.v1.dashboard import router as dashboard_router
 from src.backend.api.v1.opportunities import router as opportunities_router
@@ -45,6 +46,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     app.include_router(dashboard_router)
     app.include_router(opportunities_router)
+    app.include_router(push_router)
     app.include_router(slack_router)
     app.include_router(webhooks_router)
 

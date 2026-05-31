@@ -108,6 +108,12 @@ class Settings(BaseSettings):
         description="Stripe webhook endpoint signing secret (whsec_...)",
     )
 
+    # --- Push Notifications (Expo) ---
+    expo_push_access_token: str = Field(
+        default="",
+        description="Expo push access token for enhanced delivery",
+    )
+
     # --- Rate Limiting ---
     rate_limit_tokens_per_minute: int = Field(
         default=100,
