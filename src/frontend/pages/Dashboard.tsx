@@ -1,16 +1,19 @@
 /**
- * Opportunities Dashboard page (FE-002).
+ * Opportunities Dashboard page (FE-002, QUALITY-002).
  *
  * Live feed of discovered opportunities with filter sidebar,
- * card list, empty state, and auto-refresh polling.
+ * card list, empty state, auto-refresh polling, and keyboard
+ * shortcuts (j/k navigation, c/o/a/p/r actions, ? help).
  */
 
 import React, { useCallback, useMemo, useState } from "react";
 
-import type { OpportunitiesFilters } from "../api/opportunitiesClient";
+import type { Opportunity, OpportunitiesFilters } from "../api/opportunitiesClient";
+import KeyboardHelp from "../components/KeyboardHelp";
 import OpportunityCard from "../components/OpportunityCard";
 import OpportunityFilter from "../components/OpportunityFilter";
 import ThemeToggle from "../components/ThemeToggle";
+import useDashboardShortcuts from "../hooks/useDashboardShortcuts";
 import useOpportunities from "../hooks/useOpportunities";
 
 interface DashboardProps {
@@ -36,73 +39,79 @@ const Dashboard: React.FC<DashboardProps> = ({ token }) => {
     filters.offset,
   ]);
 
-  const {
-    opportunities,
-    total,
-    loading,
-    error,
-    refresh,
-    handleMarkPosted,
-    handleArchive,
-  } = useOpportunities(token, stableFilters);
+  const { opportunities, total, loading, error, refresh, handleMarkPosted, handleArchive } =
+    useOpportunities(token, stableFilters);
 
   const onMarkPosted = useCallback(
-    (id: string): void => {
-      handleMarkPosted(id).catch(() => {});
-    },
+    (id: string): void => { handleMarkPosted(id).catch(() => {}); },
     [handleMarkPosted]
   );
 
   const onArchive = useCallback(
-    (id: string): void => {
-      handleArchive(id).catch(() => {});
-    },
+    (id: string): void => { handleArchive(id).catch(() => {}); },
     [handleArchive]
   );
+
+  const { activeIndex, helpVisible, shortcuts, closeHelp } =
+    useDashboardShortcuts({ opportunities, onMarkPosted, onArchive, onRefresh: refresh });
 
   return (
     <div className="dashboard-page">
       <DashboardHeader total={total} onRefresh={refresh} />
-
       <div className="dashboard-layout">
         <OpportunityFilter filters={filters} onChange={setFilters} />
-
-        <main className="dashboard-feed">
-          {loading && opportunities.length === 0 && (
-            <div className="loading-spinner">Loading opportunities...</div>
-          )}
-
-          {error && <div className="error-banner">{error}</div>}
-
-          {!loading && opportunities.length === 0 && !error && (
-            <EmptyState />
-          )}
-
-          {opportunities.map((opp) => (
-            <OpportunityCard
-              key={opp.id}
-              opportunity={opp}
-              onMarkPosted={onMarkPosted}
-              onArchive={onArchive}
-            />
-          ))}
-        </main>
+        <FeedColumn
+          opportunities={opportunities}
+          loading={loading}
+          error={error}
+          activeIndex={activeIndex}
+          onMarkPosted={onMarkPosted}
+          onArchive={onArchive}
+        />
       </div>
+      <KeyboardHelp shortcuts={shortcuts} visible={helpVisible} onClose={closeHelp} />
     </div>
   );
 };
 
 // --------------- Sub-components ---------------
 
+interface FeedColumnProps {
+  opportunities: Opportunity[];
+  loading: boolean;
+  error: string | null;
+  activeIndex: number;
+  onMarkPosted: (id: string) => void;
+  onArchive: (id: string) => void;
+}
+
+const FeedColumn: React.FC<FeedColumnProps> = ({
+  opportunities, loading, error, activeIndex, onMarkPosted, onArchive,
+}) => (
+  <main className="dashboard-feed">
+    {loading && opportunities.length === 0 && (
+      <div className="loading-spinner">Loading opportunities...</div>
+    )}
+    {error && <div className="error-banner">{error}</div>}
+    {!loading && opportunities.length === 0 && !error && <EmptyState />}
+    {opportunities.map((opp, idx) => (
+      <OpportunityCard
+        key={opp.id}
+        opportunity={opp}
+        onMarkPosted={onMarkPosted}
+        onArchive={onArchive}
+        isKeyboardActive={idx === activeIndex}
+      />
+    ))}
+  </main>
+);
+
 interface DashboardHeaderProps {
   total: number;
   onRefresh: () => void;
 }
 
-const DashboardHeader: React.FC<DashboardHeaderProps> = ({
-  total,
-  onRefresh,
-}) => (
+const DashboardHeader: React.FC<DashboardHeaderProps> = ({ total, onRefresh }) => (
   <header className="dashboard-header">
     <h1>Opportunities</h1>
     <span className="dashboard-count">{total} found</span>

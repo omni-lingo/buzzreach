@@ -7,7 +7,7 @@
  *    via parent callbacks.
  */
 
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 
 import type { Opportunity as ClientOpportunity } from "../api/opportunitiesClient";
 import { ActionHistory, PostUrlForm } from "./CardDetailParts";
@@ -20,6 +20,7 @@ interface OpportunityCardProps {
   opportunity: CardOpportunity;
   onStatusChange?: () => void;
   isSelected?: boolean;
+  isKeyboardActive?: boolean;
   onToggleSelect?: (id: string) => void;
   onMarkPosted?: (id: string) => void;
   onArchive?: (id: string) => void;
@@ -29,6 +30,7 @@ const OpportunityCard: React.FC<OpportunityCardProps> = ({
   opportunity,
   onStatusChange,
   isSelected = false,
+  isKeyboardActive = false,
   onToggleSelect,
   onMarkPosted,
   onArchive,
@@ -39,6 +41,13 @@ const OpportunityCard: React.FC<OpportunityCardProps> = ({
   const [replyUrl, setReplyUrl] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const cardRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (isKeyboardActive && cardRef.current) {
+      cardRef.current.scrollIntoView({ block: "nearest" });
+    }
+  }, [isKeyboardActive]);
 
   const latestAction = actions.length > 0
     ? actions[actions.length - 1]
@@ -91,8 +100,12 @@ const OpportunityCard: React.FC<OpportunityCardProps> = ({
       .catch((e: Error) => setError(e.message));
   };
 
+  const cardClass = isKeyboardActive
+    ? "opportunity-card keyboard-active"
+    : "opportunity-card";
+
   return (
-    <div className="opportunity-card">
+    <div className={cardClass} ref={cardRef}>
       <CardHeader
         opportunity={opportunity}
         latestAction={latestAction}
