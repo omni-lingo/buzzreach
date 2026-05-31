@@ -166,15 +166,10 @@ class AuthService:
 
     def _validate_password(self, password: str) -> None:
         """Enforce password strength requirements."""
-        if len(password) < _MIN_PASSWORD_LENGTH:
-            raise AppError(
-                code="PASSWORD_TOO_WEAK",
-                message=(
-                    "Password must be at least 8 characters with "
-                    "an uppercase letter and a number"
-                ),
-            )
-        if not _PASSWORD_PATTERN.match(password):
+        if (
+            len(password) < _MIN_PASSWORD_LENGTH
+            or not _PASSWORD_PATTERN.match(password)
+        ):
             raise AppError(
                 code="PASSWORD_TOO_WEAK",
                 message=(

@@ -1,8 +1,10 @@
-"""Auth API routes for signup and email verification (ONBOARD-001).
+"""Auth API routes for signup, verification, and password reset (ONBOARD-001/004).
 
 POST /api/v1/auth/signup — register new user
 GET  /api/v1/auth/verify — verify email via token
 POST /api/v1/auth/resend-verification — resend verification email
+POST /api/v1/auth/forgot-password — request password reset email
+POST /api/v1/auth/reset-password — reset password with token
 
 All routes are public (no JWT required). Rate limiting is applied
 per-IP via the shared rate limit middleware.
@@ -19,6 +21,7 @@ from sqlalchemy.orm import Session
 from src.backend.db.session import get_session
 from src.backend.errors import AppError
 from src.backend.services.auth_service import AuthService
+from src.backend.services.password_reset_service import PasswordResetService
 from src.backend.settings import Settings
 
 log = logging.getLogger("buzzreach.api.auth")
@@ -62,6 +65,31 @@ class ResendRequest(BaseModel):
 
 class ResendResponse(BaseModel):
     """Resend verification success response."""
+
+    message: str
+
+
+class ForgotPasswordRequest(BaseModel):
+    """Forgot password request body."""
+
+    email: EmailStr
+
+
+class ForgotPasswordResponse(BaseModel):
+    """Forgot password response (always succeeds for security)."""
+
+    message: str
+
+
+class ResetPasswordRequest(BaseModel):
+    """Reset password request body."""
+
+    token: str = Field(min_length=1)
+    new_password: str = Field(min_length=8, max_length=128)
+
+
+class ResetPasswordResponse(BaseModel):
+    """Reset password success response."""
 
     message: str
 
@@ -205,10 +233,61 @@ def resend_verification(
     )
 
 
+@router.post(
+    "/forgot-password",
+    response_model=ForgotPasswordResponse,
+)
+def forgot_password(
+    body: ForgotPasswordRequest,
+    session: Annotated[Session, Depends(get_session)],
+    settings: Annotated[Settings, Depends(_get_settings)],
+) -> ForgotPasswordResponse:
+    """Request a password reset email (always returns success)."""
+    svc = PasswordResetService(session=session, settings=settings)
+    try:
+        svc.request_password_reset(body.email)
+    except AppError as exc:
+        status = _error_status(exc.code)
+        raise HTTPException(
+            status_code=status,
+            detail={"error_code": exc.code, "message": exc.message},
+        ) from None
+
+    return ForgotPasswordResponse(
+        message="If an account exists, a reset link was sent.",
+    )
+
+
+@router.post(
+    "/reset-password",
+    response_model=ResetPasswordResponse,
+    responses={400: {"model": ErrorResponse}, 429: {"model": ErrorResponse}},
+)
+def reset_password(
+    body: ResetPasswordRequest,
+    session: Annotated[Session, Depends(get_session)],
+    settings: Annotated[Settings, Depends(_get_settings)],
+) -> ResetPasswordResponse:
+    """Reset password using a valid token from the reset email."""
+    svc = PasswordResetService(session=session, settings=settings)
+    try:
+        svc.reset_password(body.token, body.new_password)
+    except AppError as exc:
+        status = _error_status(exc.code)
+        raise HTTPException(
+            status_code=status,
+            detail={"error_code": exc.code, "message": exc.message},
+        ) from None
+
+    return ResetPasswordResponse(
+        message="Password reset successfully. Please log in.",
+    )
+
+
 def _error_status(code: str) -> int:
     """Map error code to HTTP status."""
     conflict_codes = {"EMAIL_TAKEN", "USERNAME_TAKEN"}
-    rate_codes = {"RATE_LIMIT_EXCEEDED"}
+    rate_codes = {"RATE_LIMIT_EXCEEDED", "RESET_RATE_LIMITED"}
     if code in conflict_codes:
         return 409
     if code in rate_codes:
