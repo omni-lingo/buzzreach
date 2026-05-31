@@ -89,6 +89,14 @@ class Settings(BaseSettings):
         default="",
         description="Slack incoming webhook URL for digest delivery",
     )
+    slack_bot_token: str = Field(
+        default="",
+        description="Slack bot OAuth token (xoxb-...) for Web API calls",
+    )
+    slack_signing_secret: str = Field(
+        default="",
+        description="Slack app signing secret for webhook verification",
+    )
 
     # --- Stripe / Billing ---
     stripe_api_key: str = Field(
