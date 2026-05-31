@@ -1,22 +1,28 @@
 /**
- * Opportunity card with action tracking (FEAT-003).
+ * Opportunity card with action tracking (FEAT-003, FE-002).
  *
- * Displays an opportunity with draft reply and action buttons.
- * "Paste & Open" pops up a form to optionally paste the reply URL.
- * Auto-logs "posted" action with optional reply URL.
- * Shows action status indicators ("Posted", "Archived", etc.).
+ * Two modes:
+ * 1. Detail mode (FEAT-003): action history, post URL form.
+ * 2. Dashboard mode (FE-002): copy draft, mark posted, archive
+ *    via parent callbacks.
  */
 
 import React, { useCallback, useEffect, useState } from "react";
 
+import type { Opportunity as ClientOpportunity } from "../api/opportunitiesClient";
+import { ActionHistory, PostUrlForm } from "./CardDetailParts";
 import type { Opportunity, OpportunityAction } from "./opportunityApi";
 import { fetchActions, logAction } from "./opportunityApi";
 
+type CardOpportunity = Opportunity | ClientOpportunity;
+
 interface OpportunityCardProps {
-  opportunity: Opportunity;
+  opportunity: CardOpportunity;
   onStatusChange?: () => void;
   isSelected?: boolean;
   onToggleSelect?: (id: string) => void;
+  onMarkPosted?: (id: string) => void;
+  onArchive?: (id: string) => void;
 }
 
 const OpportunityCard: React.FC<OpportunityCardProps> = ({
@@ -24,7 +30,10 @@ const OpportunityCard: React.FC<OpportunityCardProps> = ({
   onStatusChange,
   isSelected = false,
   onToggleSelect,
+  onMarkPosted,
+  onArchive,
 }) => {
+  const isDashboardMode = !!(onMarkPosted || onArchive);
   const [actions, setActions] = useState<OpportunityAction[]>([]);
   const [showPostForm, setShowPostForm] = useState(false);
   const [replyUrl, setReplyUrl] = useState("");
@@ -36,10 +45,11 @@ const OpportunityCard: React.FC<OpportunityCardProps> = ({
     : null;
 
   const loadActions = useCallback((): void => {
+    if (isDashboardMode) return;
     fetchActions(opportunity.id)
       .then(setActions)
       .catch((e: Error) => setError(e.message));
-  }, [opportunity.id]);
+  }, [opportunity.id, isDashboardMode]);
 
   useEffect(() => {
     loadActions();
@@ -75,7 +85,9 @@ const OpportunityCard: React.FC<OpportunityCardProps> = ({
   const handleCopy = (): void => {
     navigator.clipboard
       .writeText(opportunity.draft_reply)
-      .then(() => handleAction("copied"))
+      .then(() => {
+        if (!isDashboardMode) handleAction("copied");
+      })
       .catch((e: Error) => setError(e.message));
   };
 
@@ -97,16 +109,25 @@ const OpportunityCard: React.FC<OpportunityCardProps> = ({
 
       {error && <div className="error-banner">{error}</div>}
 
-      <CardActions
-        loading={loading}
-        showPostForm={showPostForm}
-        onView={() => handleAction("viewed")}
-        onCopy={handleCopy}
-        onOpenPostForm={() => setShowPostForm(true)}
-        onArchive={() => handleAction("archived")}
-      />
+      {isDashboardMode ? (
+        <DashboardActions
+          loading={loading}
+          onCopy={handleCopy}
+          onMarkPosted={() => onMarkPosted?.(opportunity.id)}
+          onArchive={() => onArchive?.(opportunity.id)}
+        />
+      ) : (
+        <DetailActions
+          loading={loading}
+          showPostForm={showPostForm}
+          onView={() => handleAction("viewed")}
+          onCopy={handleCopy}
+          onOpenPostForm={() => setShowPostForm(true)}
+          onArchive={() => handleAction("archived")}
+        />
+      )}
 
-      {showPostForm && (
+      {!isDashboardMode && showPostForm && (
         <PostUrlForm
           replyUrl={replyUrl}
           setReplyUrl={setReplyUrl}
@@ -116,13 +137,15 @@ const OpportunityCard: React.FC<OpportunityCardProps> = ({
         />
       )}
 
-      <ActionHistory actions={actions} />
+      {!isDashboardMode && <ActionHistory actions={actions} />}
     </div>
   );
 };
 
+// --------------- Sub-components ---------------
+
 interface CardHeaderProps {
-  opportunity: Opportunity;
+  opportunity: CardOpportunity;
   latestAction: OpportunityAction | null;
   isSelected: boolean;
   onToggleSelect?: (id: string) => void;
@@ -144,12 +167,8 @@ const CardHeader: React.FC<CardHeaderProps> = ({
         aria-label={`Select ${opportunity.title}`}
       />
     )}
-    <h3>
-      <a
-        href={opportunity.url}
-        target="_blank"
-        rel="noopener noreferrer"
-      >
+    <h3 className="opp-title">
+      <a href={opportunity.url} target="_blank" rel="noopener noreferrer">
         {opportunity.title}
       </a>
     </h3>
@@ -163,10 +182,6 @@ const CardHeader: React.FC<CardHeaderProps> = ({
   </div>
 );
 
-interface StatusBadgeProps {
-  actionType: string;
-}
-
 const STATUS_LABELS: Record<string, string> = {
   viewed: "Viewed",
   copied: "Copied",
@@ -174,13 +189,36 @@ const STATUS_LABELS: Record<string, string> = {
   archived: "Archived",
 };
 
-const StatusBadge: React.FC<StatusBadgeProps> = ({ actionType }) => (
+const StatusBadge: React.FC<{ actionType: string }> = ({ actionType }) => (
   <span className={`status-badge status-${actionType}`}>
     {STATUS_LABELS[actionType] ?? actionType}
   </span>
 );
 
-interface CardActionsProps {
+interface DashboardActionsProps {
+  loading: boolean;
+  onCopy: () => void;
+  onMarkPosted: () => void;
+  onArchive: () => void;
+}
+
+const DashboardActions: React.FC<DashboardActionsProps> = ({
+  loading, onCopy, onMarkPosted, onArchive,
+}) => (
+  <div className="opp-actions">
+    <button className="btn-copy-draft" onClick={onCopy} disabled={loading}>
+      Copy Draft
+    </button>
+    <button className="btn-mark-posted" onClick={onMarkPosted} disabled={loading}>
+      Mark as Posted
+    </button>
+    <button className="btn-archive" onClick={onArchive} disabled={loading}>
+      Archive
+    </button>
+  </div>
+);
+
+interface DetailActionsProps {
   loading: boolean;
   showPostForm: boolean;
   onView: () => void;
@@ -189,21 +227,12 @@ interface CardActionsProps {
   onArchive: () => void;
 }
 
-const CardActions: React.FC<CardActionsProps> = ({
-  loading,
-  showPostForm,
-  onView,
-  onCopy,
-  onOpenPostForm,
-  onArchive,
+const DetailActions: React.FC<DetailActionsProps> = ({
+  loading, showPostForm, onView, onCopy, onOpenPostForm, onArchive,
 }) => (
   <div className="opp-actions">
-    <button onClick={onView} disabled={loading}>
-      Mark Viewed
-    </button>
-    <button onClick={onCopy} disabled={loading}>
-      Copy Draft
-    </button>
+    <button onClick={onView} disabled={loading}>Mark Viewed</button>
+    <button onClick={onCopy} disabled={loading}>Copy Draft</button>
     <button
       onClick={onOpenPostForm}
       disabled={loading || showPostForm}
@@ -211,83 +240,10 @@ const CardActions: React.FC<CardActionsProps> = ({
     >
       Paste &amp; Open
     </button>
-    <button
-      onClick={onArchive}
-      disabled={loading}
-      className="archive-btn"
-    >
+    <button onClick={onArchive} disabled={loading} className="archive-btn">
       Archive
     </button>
   </div>
 );
-
-interface PostUrlFormProps {
-  replyUrl: string;
-  setReplyUrl: (v: string) => void;
-  onSubmit: () => void;
-  onCancel: () => void;
-  loading: boolean;
-}
-
-const PostUrlForm: React.FC<PostUrlFormProps> = ({
-  replyUrl,
-  setReplyUrl,
-  onSubmit,
-  onCancel,
-  loading,
-}) => (
-  <div className="post-url-form">
-    <label>
-      Reply URL (optional)
-      <input
-        type="url"
-        value={replyUrl}
-        onChange={(e) => setReplyUrl(e.target.value)}
-        placeholder="https://reddit.com/r/.../comment/..."
-      />
-    </label>
-    <div className="post-url-actions">
-      <button onClick={onSubmit} disabled={loading}>
-        Log as Posted
-      </button>
-      <button onClick={onCancel} disabled={loading}>
-        Cancel
-      </button>
-    </div>
-  </div>
-);
-
-interface ActionHistoryProps {
-  actions: OpportunityAction[];
-}
-
-const ActionHistory: React.FC<ActionHistoryProps> = ({ actions }) => {
-  if (actions.length === 0) return null;
-
-  return (
-    <details className="action-history">
-      <summary>Action History ({actions.length})</summary>
-      <ul>
-        {actions.map((a) => (
-          <li key={a.id}>
-            <span className="action-type">{a.action_type}</span>
-            <span className="action-time">
-              {new Date(a.created_at).toLocaleString()}
-            </span>
-            {a.posted_url && (
-              <a
-                href={a.posted_url}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                View Reply
-              </a>
-            )}
-          </li>
-        ))}
-      </ul>
-    </details>
-  );
-};
 
 export default OpportunityCard;
