@@ -70,6 +70,20 @@ class Settings(BaseSettings):
         description="Sender email address for digests",
     )
 
+    # --- Email Verification ---
+    app_base_url: str = Field(
+        default="http://localhost:8000",
+        description="Base URL for email verification and reset links",
+    )
+    email_token_expiry_hours: int = Field(
+        default=6,
+        description="Hours until email verification/reset tokens expire",
+    )
+    email_rate_limit_per_hour: int = Field(
+        default=3,
+        description="Max verification emails per user per hour",
+    )
+
     # --- Slack ---
     slack_webhook_url: str = Field(
         default="",

@@ -1,5 +1,6 @@
 """ORM model exports for BuzzReach."""
 
+from src.backend.models.email_token import EmailToken
 from src.backend.models.filter_rule import FilterRule
 from src.backend.models.metric import Metric
 from src.backend.models.opportunity import Opportunity
@@ -14,6 +15,7 @@ from src.backend.models.user import User
 
 __all__ = [
     "DailyUsage",
+    "EmailToken",
     "FilterRule",
     "Metric",
     "Opportunity",
