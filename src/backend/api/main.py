@@ -12,6 +12,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from src.backend.api.auth import router as auth_router
 from src.backend.api.billing import router as billing_router
+from src.backend.api.niche_bundles import router as niche_bundles_router
 from src.backend.api.push import router as push_router
 from src.backend.api.slack_webhooks import router as slack_router
 from src.backend.api.templates import router as templates_router
@@ -54,6 +55,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(bulk_router)
     app.include_router(dashboard_router)
     app.include_router(draft_router)
+    app.include_router(niche_bundles_router)
     app.include_router(opportunities_router)
     app.include_router(push_router)
     app.include_router(slack_router)
