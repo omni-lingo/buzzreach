@@ -14,6 +14,7 @@ from src.backend.api.auth import router as auth_router
 from src.backend.api.billing import router as billing_router
 from src.backend.api.push import router as push_router
 from src.backend.api.slack_webhooks import router as slack_router
+from src.backend.api.v1.bulk_routes import router as bulk_router
 from src.backend.api.v1.dashboard import router as dashboard_router
 from src.backend.api.v1.draft_routes import router as draft_router
 from src.backend.api.v1.opportunities import router as opportunities_router
@@ -49,6 +50,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     app.include_router(auth_router)
     app.include_router(billing_router)
+    app.include_router(bulk_router)
     app.include_router(dashboard_router)
     app.include_router(draft_router)
     app.include_router(opportunities_router)

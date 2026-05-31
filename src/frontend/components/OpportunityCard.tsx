@@ -15,11 +15,15 @@ import { fetchActions, logAction } from "./opportunityApi";
 interface OpportunityCardProps {
   opportunity: Opportunity;
   onStatusChange?: () => void;
+  isSelected?: boolean;
+  onToggleSelect?: (id: string) => void;
 }
 
 const OpportunityCard: React.FC<OpportunityCardProps> = ({
   opportunity,
   onStatusChange,
+  isSelected = false,
+  onToggleSelect,
 }) => {
   const [actions, setActions] = useState<OpportunityAction[]>([]);
   const [showPostForm, setShowPostForm] = useState(false);
@@ -80,6 +84,8 @@ const OpportunityCard: React.FC<OpportunityCardProps> = ({
       <CardHeader
         opportunity={opportunity}
         latestAction={latestAction}
+        isSelected={isSelected}
+        onToggleSelect={onToggleSelect}
       />
 
       <p className="opp-why">{opportunity.why_matched}</p>
@@ -118,13 +124,26 @@ const OpportunityCard: React.FC<OpportunityCardProps> = ({
 interface CardHeaderProps {
   opportunity: Opportunity;
   latestAction: OpportunityAction | null;
+  isSelected: boolean;
+  onToggleSelect?: (id: string) => void;
 }
 
 const CardHeader: React.FC<CardHeaderProps> = ({
   opportunity,
   latestAction,
+  isSelected,
+  onToggleSelect,
 }) => (
   <div className="opp-header">
+    {onToggleSelect && (
+      <input
+        type="checkbox"
+        className="opp-select-checkbox"
+        checked={isSelected}
+        onChange={() => onToggleSelect(opportunity.id)}
+        aria-label={`Select ${opportunity.title}`}
+      />
+    )}
     <h3>
       <a
         href={opportunity.url}
