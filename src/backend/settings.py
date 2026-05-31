@@ -126,6 +126,12 @@ class Settings(BaseSettings):
         description="Directory containing per-product JSON config files",
     )
 
+    # --- CORS ---
+    cors_allowed_origins: list[str] = Field(
+        default=["http://localhost:3000"],
+        description="Allowed CORS origins (never use '*')",
+    )
+
     # --- Server ---
     host: str = Field(default="0.0.0.0", description="Server bind host")
     port: int = Field(default=8000, description="Server bind port")
