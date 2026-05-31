@@ -1,15 +1,10 @@
 """Content extractor (EXT-001).
 
-Fetches a page via httpx, runs readability-lxml + BeautifulSoup to pull the
-main body and visible comment text. Truncates to a configurable char budget
-so downstream AI cost stays bounded.
+Fetches a page via httpx, runs readability + BeautifulSoup to pull the
+main body and visible comment text. Site-specific parsers (Reddit,
+Quora, blog) are tried before falling back to the generic pipeline.
 
-Reddit URLs are routed to the specialised Reddit parser (PARSE-001) and
-Quora URLs to the Quora parser (PARSE-002) before falling back to the
-generic readability pipeline.
-
-Raises ``AppError(code="EXTRACTION_FAILED")`` on unrecoverable fetch/parse
-errors.
+Raises ``AppError(code="EXTRACTION_FAILED")`` on unrecoverable errors.
 """
 
 import logging
@@ -20,6 +15,7 @@ from readability import Document
 
 from contracts.extraction.extracted_content import ExtractedContent
 from src.backend.errors import AppError
+from src.backend.services.blog_parser import is_blog_url, parse_blog_post
 from src.backend.services.quora_parser import is_quora_url, parse_quora_question
 from src.backend.services.reddit_parser import is_reddit_url, parse_reddit_post
 from src.backend.settings import Settings
@@ -63,6 +59,11 @@ def extract(
 
     if is_quora_url(url):
         result = _try_quora_parser(html, url, settings)
+        if result is not None:
+            return result
+
+    if is_blog_url(url):
+        result = _try_blog_parser(html, url, settings)
         if result is not None:
             return result
 
@@ -116,6 +117,27 @@ def _try_quora_parser(
         )
     except Exception:
         log.info("Quora parser fallback", extra={"url": url})
+        return None
+
+
+def _try_blog_parser(
+    html: str, url: str, settings: Settings,
+) -> ExtractedContent | None:
+    """Attempt blog-specific parsing; return None to fall back to generic."""
+    try:
+        post = parse_blog_post(html, url)
+        if not post.title and not post.body:
+            return None
+        content = post.to_extracted_content()
+        return _apply_char_budget(
+            url=content.url,
+            title=content.title,
+            body=content.body,
+            comments=content.comments,
+            budget=settings.extraction_char_budget,
+        )
+    except Exception:
+        log.info("Blog parser fallback", extra={"url": url})
         return None
 
 

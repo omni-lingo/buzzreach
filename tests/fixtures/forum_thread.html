@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head><title>How to fix segfault in GCC 13? - DevForums</title></head>
+<body>
+<div class="forum-thread">
+  <div class="thread-header">
+    <h1 class="thread-title">How to fix segfault in GCC 13?</h1>
+    <div class="thread-meta">
+      <span class="thread-author">Posted by <a href="/user/jack">Jack Debug</a></span>
+      <time datetime="2024-09-01T14:00:00Z">September 1, 2024</time>
+    </div>
+  </div>
+  <div class="thread-body original-post">
+    <p>I'm getting a segmentation fault when compiling with GCC 13 on Ubuntu 22.04. The same code compiles fine with GCC 12. Has anyone else run into this?</p>
+    <p>Error occurs in template instantiation with variadic arguments.</p>
+  </div>
+</div>
+
+<div class="forum-replies">
+  <div class="forum-post reply" data-post-id="1001">
+    <div class="post-header">
+      <span class="post-author"><a href="/user/kate">Kate Compiler</a></span>
+      <time class="post-date" datetime="2024-09-01T15:30:00Z">September 1, 2024</time>
+    </div>
+    <div class="post-body">
+      <p>This is a known bug in GCC 13.1. It was fixed in 13.2. Try upgrading your compiler version.</p>
+    </div>
+  </div>
+  <div class="forum-post reply" data-post-id="1002">
+    <div class="post-header">
+      <span class="post-author"><a href="/user/leo">Leo Sysadmin</a></span>
+      <time class="post-date" datetime="2024-09-01T16:45:00Z">September 1, 2024</time>
+    </div>
+    <div class="post-body">
+      <p>Can you share the minimal reproducer? Variadic template segfaults usually come from recursive instantiation depth limits.</p>
+    </div>
+  </div>
+  <div class="forum-post reply" data-post-id="1003">
+    <div class="post-header">
+      <span class="post-author"><a href="/user/jack">Jack Debug</a></span>
+      <time class="post-date" datetime="2024-09-02T09:00:00Z">September 2, 2024</time>
+    </div>
+    <div class="post-body">
+      <p>Thanks Kate! Upgrading to 13.2 fixed it. Leo, I'll post the reproducer in case it helps others.</p>
+    </div>
+  </div>
+  <div class="forum-post reply" data-post-id="1004">
+    <div class="post-header">
+      <span class="post-author"><a href="/user/mia">Mia Templates</a></span>
+      <time class="post-date" datetime="2024-09-02T10:15:00Z">September 2, 2024</time>
+    </div>
+    <div class="post-body">
+      <p>FYI, you can also add -ftemplate-depth=2048 as a workaround for the recursion depth issue.</p>
+    </div>
+  </div>
+</div>
+</body>
+</html>
