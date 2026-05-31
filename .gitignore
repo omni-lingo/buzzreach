@@ -1,112 +1,48 @@
+# BuzzReach .gitignore
+
+# Runtime data
+data/
+*.db
+*.db-journal
+
+# Build state (managed by runner)
+state/
+logs/
+
+# Environment / secrets
+.env
+.env.local
+.env.*.local
+
 # Python
 __pycache__/
 *.py[cod]
 *$py.class
-*.so
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-pip-wheel-metadata/
-share/python-wheels/
 *.egg-info/
-.installed.cfg
+dist/
+build/
 *.egg
-MANIFEST
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
 
 # Virtual environments
+.venv/
 venv/
-ENV/
 env/
-.venv
 
 # IDE
-.vscode/
 .idea/
+.vscode/
 *.swp
 *.swo
 *~
-.DS_Store
-.project
-.pydevproject
-.settings/
-*.sublime-project
-*.sublime-workspace
 
-# Testing
-.pytest_cache/
-.coverage
-htmlcov/
-.tox/
-.hypothesis/
-*.cover
-
-# Build runner state (machine-readable, not versioned)
-state/build_state.json
-state/claims.db
-state/
-
-# Logs
-logs/
-*.log
-
-# Environment variables (secrets)
-.env
-.env.local
-config.yaml
-config.local.yaml
-
-# Database (if local SQLite)
-*.db
-*.sqlite
-*.sqlite3
-
-# Node (frontend)
+# Node / Electron
 node_modules/
-npm-debug.log
-yarn-error.log
-package-lock.json (optional, can be versioned)
-dist/
-.next/
-out/
+src/desktop/dist/
+src/desktop/build/
 
-# OS files
-Thumbs.db
+# OS
 .DS_Store
-
-# Temporary files
-*.tmp
-*.temp
-*.bak
-
-# IDE temp
-.vscode/settings.json (local, can override)
-
-# Build artifacts
-dist/
-build/
-*.whl
-
-# Type checking cache
-.mypy_cache/
-.dmypy.json
-dmypy.json
-
-# OpenAPI (auto-generated, can version after L3)
-openapi.json (optional, auto-generated)
-
-# Coverage
-.coverage.*
-coverage/
-
-# Celery
-celerybeat-schedule
+Thumbs.db
