@@ -96,6 +96,16 @@ class Settings(BaseSettings):
         description="Maximum token bucket capacity (burst allowance)",
     )
 
+    # --- Extraction ---
+    extraction_timeout_seconds: int = Field(
+        default=15,
+        description="HTTP timeout for content extraction requests (seconds)",
+    )
+    extraction_char_budget: int = Field(
+        default=20000,
+        description="Max chars kept from extracted body + comments",
+    )
+
     # --- Config ---
     config_dir: Path = Field(
         default=Path("config"),
