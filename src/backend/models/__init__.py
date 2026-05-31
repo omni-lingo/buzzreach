@@ -3,6 +3,7 @@
 from src.backend.models.filter_rule import FilterRule
 from src.backend.models.metric import Metric
 from src.backend.models.opportunity import Opportunity
+from src.backend.models.search_profile import SearchProfile
 from src.backend.models.seen_url import SeenUrl
 from src.backend.models.stripe_customer import StripeCustomer
 from src.backend.models.team import Team
@@ -16,6 +17,7 @@ __all__ = [
     "FilterRule",
     "Metric",
     "Opportunity",
+    "SearchProfile",
     "SeenUrl",
     "StripeCustomer",
     "Team",
