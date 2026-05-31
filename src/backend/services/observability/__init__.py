@@ -1,5 +1,6 @@
-"""Observability service — health monitoring and alerting (MONITOR-001)."""
+"""Observability service — health monitoring, alerting, and metrics."""
 
 from src.backend.services.observability.health_monitor import HealthMonitor
+from src.backend.services.observability.metrics import MetricsRecorder
 
-__all__ = ["HealthMonitor"]
+__all__ = ["HealthMonitor", "MetricsRecorder"]
