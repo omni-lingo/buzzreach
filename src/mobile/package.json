@@ -48,6 +48,22 @@
   },
   "jest": {
     "preset": "jest-expo",
+    "roots": [
+      "<rootDir>",
+      "<rootDir>/../../tests"
+    ],
+    "testMatch": [
+      "**/__tests__/**/*.[jt]s?(x)",
+      "**/?(*.)+(spec|test).[tj]s?(x)",
+      "**/test_*.[tj]s?(x)"
+    ],
+    "modulePaths": [
+      "<rootDir>"
+    ],
+    "moduleDirectories": [
+      "node_modules",
+      "<rootDir>/node_modules"
+    ],
     "transformIgnorePatterns": [
       "node_modules/(?!((jest-)?react-native|@react-native(-community)?)|expo(nent)?|@expo(nent)?/.*|@expo-google-fonts/.*|react-navigation|@react-navigation/.*|@sentry/react-native|native-base|react-native-svg|react-native-gesture-handler|react-native-reanimated|zustand)"
     ]
